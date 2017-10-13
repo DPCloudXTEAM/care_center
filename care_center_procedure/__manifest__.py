@@ -18,6 +18,7 @@
     ],
 
     'data': [
+        'views/assign_procedure_wizard.xml',
         'views/project_issue.xml',
         'views/procedure.xml',
     ],

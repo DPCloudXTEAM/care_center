@@ -1,39 +1,42 @@
 # -*- coding: utf-8 -*-
 from odoo import api, fields, models, _
+from odoo.exceptions import ValidationError
 
 
 class ProcedureProcedure(models.Model):
     _name = 'procedure.procedure'
     _order = 'sequence asc'
 
-    @api.multi
-    def _get_sequence(self):
-        """Calculate default sequence of child procedures"""
-        for record in self:
-            if not record.parent_id:
-                continue
-            # don't override sequence
-            if record.sequence:
-                continue
-
-            print('child ids are', record.child_ids, len(record.child_ids))
-
-            return len(record.child_ids) + 1
-
-
+    active = fields.Boolean(default=True)
     name = fields.Char(required=True)
     description = fields.Html(string='Description')
-
     parent_id = fields.Many2one('procedure.procedure', string='Procedure', ondelete='cascade',
                                 domain=[('parent_id', '=', False)],)
     child_ids = fields.One2many('procedure.procedure', 'parent_id', string='Checklist')
-    sequence = fields.Integer('Sequence', default=_get_sequence)
+    sequence = fields.Integer('Sequence', default=1)
+    tag_ids = fields.Many2many('project.tags', string='Tags')
+
+    @api.model
+    def create(self, vals):
+        if 'parent_id' in vals and vals.get('sequence', 1) == 1:
+            child_count = self.env['procedure.procedure'].search_count([
+                ('parent_id', '=', vals['parent_id'])
+            ])
+            vals['sequence'] = child_count + 1
+        return super(ProcedureProcedure, self).create(vals)
+
+    @api.constrains('parent_id')
+    def _limit_depth(self):
+        if self.parent_id and self.parent_id.parent_id:
+            raise ValidationError(
+                '%s is a checklist item and cannot be a parent procedure' % self.parent_id.name
+            )
 
     @api.multi
     def add_checklist(self):
         """Display modal form to add new checklists"""
 
-        form = self.env.ref('care_center_procedure.view_procedure_form')
+        form = self.env.ref('care_center_procedure.view_procedure_checklist_form')
 
         return {
             'name': 'Add Checklist',
@@ -52,72 +55,77 @@ class ProcedureProcedure(models.Model):
 
 class ProcedureAssignment(models.Model):
     _name = "procedure.assignment"
-    _inherit = ['ir.needaction_mixin']
+    _rec_name = 'procedure_id'
 
-    state = fields.Selection([
+    status = fields.Selection([
         ('done', 'Done'),
         ('todo', 'To Do'),
         ('waiting', 'Waiting'),
+        ('working', 'In Progress'),
         ('cancelled', 'Cancelled'),
     ],
      'Status', required=True, copy=False, default='todo')
 
-    name = fields.Char(related='procedure_id.name', store=True)
     procedure_id = fields.Many2one('procedure.procedure', required=True)
-    user_id = fields.Many2one('res.users', 'Assigned to', required=True)
+    sequence = fields.Integer()
     issue_id = fields.Many2one('project.issue', 'Issue', ondelete='cascade', required=False, index="1")
-    task_id = fields.Many2one('project.task', 'Task', ondelete='cascade', required=False, index="1")
-    hide_button = fields.Boolean(compute='_compute_hide_button')
+    description = fields.Html('Description', related='procedure_id.description')
     recolor = fields.Boolean(compute='_compute_recolor')
 
-    @api.multi
-    def _compute_user(self):
-        for record in self:
-            if self.env.user != record.user_id and self.env.user != record.create_uid:
-                record.default_user = record.user_id
-            else:
-                if self.env.user != record.user_id:
-                    record.default_user = record.user_id
-                elif self.env.user != record.create_uid:
-                    record.default_user = record.create_uid
-                elif self.env.user == record.create_uid and self.env.user == record.user_id:
-                    record.default_user = self.env.user
+    _sql_constraints = [
+        ('procedure_issue_uniq', 'unique(procedure_id, issue_id)', 'A procedure may only be assigned once!'),
+    ]
 
     @api.multi
     def _compute_recolor(self):
         for record in self:
-            if self.env.user == record.user_id and record.state == 'todo':
+            if record.status == 'todo':
                 record.recolor = True
 
     @api.multi
-    def _compute_hide_button(self):
-        for record in self:
-            if self.env.user != record.user_id:
-                record.hide_button = True
+    def set_parent_procedure_status(self):
 
-    @api.model
-    def _needaction_domain_get(self):
-        if self._needaction:
-            return [('state', '=', 'todo'), ('user_id', '=', self.env.uid)]
-        return []
+        if not self.procedure_id.parent_id:
+            return
 
-    @api.multi
-    def change_state_done(self):
-        for record in self:
-            record.state = 'done'
+        procedure = self.procedure_id.parent_id
+        unfinished_checklist = self.env['procedure.assignment'].search_count([
+            ('procedure_id.parent_id', '=', procedure.id),
+            ('issue_id', '=', self.issue_id.id),
+            ('status', 'in', ['todo', 'waiting'])
+        ])
 
-    @api.multi
-    def change_state_todo(self):
-        for record in self:
-            record.state = 'todo'
+        procedure_assignment = self.env['procedure.assignment'].search([
+            ('issue_id', '=', self.issue_id.id),
+            ('procedure_id', '=', procedure.id),
+        ])
 
-    @api.multi
-    def change_state_cancelled(self):
-        for record in self:
-            record.state = 'cancelled'
+        if unfinished_checklist:
+            if procedure_assignment.status != 'working':
+                procedure_assignment.write({'status': 'working'})
+        else:
+            procedure_assignment.write({'status': 'done'})
 
     @api.multi
-    def change_state_waiting(self):
+    def change_status_done(self):
         for record in self:
-            record.state = 'waiting'
+            record.status = 'done'
+            self.set_parent_procedure_status()
 
+    @api.multi
+    def change_status_todo(self):
+        for record in self:
+            record.status = 'todo'
+            self.set_parent_procedure_status()
+
+    @api.multi
+    def change_status_cancelled(self):
+        for record in self:
+            record.status = 'cancelled'
+            self.set_parent_procedure_status()
+
+    @api.multi
+    def change_status_waiting(self):
+        for record in self:
+            record.status = 'waiting'
+            self.set_parent_procedure_status()
