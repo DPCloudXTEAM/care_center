@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Checklist form view -->
+    <record id="view_procedure_checklist_form" model="ir.ui.view">
+        <field name="name">procedure.checklist.form</field>
+        <field name="model">procedure.procedure</field>
+        <field name="type">form</field>
+        <field name="arch" type="xml">
+            <form string="Checklist">
+                <sheet>
+                    <group name="procedure_info" string="Procedure Info" colspan="4" col="4">
+                        <field name="name"/>
+                        <field name="sequence"/>
+                        <field name="parent_id" string="Parent"/>
+                        <newline />
+                        <field name="description"/>
+                    </group>
+
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Procedure tree view -->
+    <record id="view_procedure_tree" model="ir.ui.view">
+        <field name="name">procedure.procedure.tree</field>
+        <field name="model">procedure.procedure</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="name"/>
+                <field name="parent_id"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Procedure form view -->
+    <record id="view_procedure_form" model="ir.ui.view">
+        <field name="name">procedure.procedure.form</field>
+        <field name="model">procedure.procedure</field>
+        <field name="type">form</field>
+        <field name="priority" eval="1"/>
+        <field name="arch" type="xml">
+            <form string="Procedure">
+                <header>
+                    <button name="add_checklist" string="Add Checklist" type="object" invisible="context.get('hide_checklist',False)"/>
+                </header>
+                <sheet>
+                    <group name="procedure_info" string="Procedure Info" colspan="4" col="4">
+                        <field name="name"/>
+                        <field name="sequence"/>
+                        <field name="parent_id" string="Parent"/>
+                        <separator string="Documentation" colspan="4"/>
+                        <field name="description" nolabel="1" colspan="4"/>
+                    </group>
+                    <group string="Checklist" colspan="4" col="4" invisible="context.get('hide_checklist',False)" attrs="{'invisible': [('parent_id', '!=', False)]}">
+                        <field name="child_ids" nolabel="1" />
+                    </group>
+
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Procedure search view -->
+    <record id="view_procedure_filter" model="ir.ui.view">
+        <field name="name">procedure.procedure.filter</field>
+        <field name="model">procedure.procedure</field>
+        <field name="type">search</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="parent_id"/>
+                <field name="description"/>
+                <group expand="1" string="Group By">
+                    <filter name="group_by_procedure" string="Parent Procedure"
+                            context="{'group_by':'parent_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Procedure action -->
+    <record id="action_procedures" model="ir.actions.act_window">
+        <field name="name">Procedure</field>
+        <field name="res_model">procedure.procedure</field>
+        <field name="view_type">form</field>
+        <field name="domain">[('parent_id', '=', False)]</field>
+        <field name="view_id" ref="view_procedure_tree"/>
+        <field name="search_view_id" ref="view_procedure_filter"/>
+    </record>
+
+    <!-- Show in CareCenter config menu -->
+    <menuitem name="Procedures"
+              id="menu_procedures_config"
+              parent="care_center.menu_support_config"
+              sequence="5"
+              action="action_procedures"/>
+
+    <!-- Checklist action -->
+    <!--<record id="action_checklist" model="ir.actions.act_window">-->
+        <!--<field name="name">Checklist Action</field>-->
+        <!--<field name="res_model">procedure.procedure</field>-->
+        <!--<field name="view_type">form</field>-->
+        <!--<field name="domain">[('parent_id', '=', False)]</field>-->
+        <!--<field name="view_id" ref="view_procedure_tree"/>-->
+        <!--<field name="context">{'parent_id': active_id}</field>-->
+    <!--</record>-->
+
+</odoo>

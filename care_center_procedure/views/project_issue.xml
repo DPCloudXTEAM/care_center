@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="project_issue_procedure_form_view" model="ir.ui.view">
+        <field name="name">Project Issue Procedure</field>
+        <field name="model">project.issue</field>
+        <field name="inherit_id" ref="project_issue.project_issue_form_view"/>
+        <field name="arch" type="xml">
+
+            <notebook position="inside">
+                <page string="Procedures">
+                    <group string="Procedures" name="procedures">
+                        <field name="procedure_ids" nolabel="1"/>
+                    </group>
+                </page>
+                <page string="Checklist">
+                    <group string="Checklist" name="checklist">
+                        <field name="checklist_ids" nolabel="1"/>
+                    </group>
+                </page>
+            </notebook>
+
+        </field>
+    </record>
+
+</odoo>
