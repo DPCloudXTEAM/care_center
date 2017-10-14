@@ -45,6 +45,7 @@
             <form string="Procedure">
                 <header>
                     <button name="add_checklist" string="Add Checklist" type="object" invisible="context.get('hide_checklist',False)" attrs="{'invisible': [('parent_id', '!=', False)]}"/>
+                    <button name="show_documentation" string="Show Documentation" type="object"/>
                 </header>
                 <sheet>
                     <div class="oe_button_box" name="button_box">
@@ -137,7 +138,7 @@
               action="action_checklists"/>
 
     <!-- Procedure Assignment form view -->
-    <record id="view_procedure_form" model="ir.ui.view">
+    <record id="view_procedure_assignment_form" model="ir.ui.view">
         <field name="name">procedure.assignment.form</field>
         <field name="model">procedure.assignment</field>
         <field name="type">form</field>
@@ -151,6 +152,36 @@
                         <separator string="Documentation" colspan="4"/>
                         <field name="description" nolabel="1" colspan="4"/>
                     </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Procedure Documentation view -->
+    <record id="view_procedure_documentation_form" model="ir.ui.view">
+        <field name="name">procedure.procedure.documentation.form</field>
+        <field name="model">procedure.procedure</field>
+        <field name="type">form</field>
+        <field name="arch" type="xml">
+            <form string="Documentation">
+                <sheet>
+                    <separator string="Documentation" colspan="4"/>
+                    <field name="documentation" nolabel="1" colspan="4"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Procedure Assignment Documentation view -->
+    <record id="view_procedure_documentation_form2" model="ir.ui.view">
+        <field name="name">procedure.assignment.documentation.form</field>
+        <field name="model">procedure.assignment</field>
+        <field name="type">form</field>
+        <field name="arch" type="xml">
+            <form string="Documentation">
+                <sheet>
+                    <separator string="Documentation" colspan="4"/>
+                    <field name="documentation" nolabel="1" colspan="4"/>
                 </sheet>
             </form>
         </field>

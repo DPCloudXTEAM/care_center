@@ -23,6 +23,7 @@
                           <field name="sequence"/>
                           <field name="procedure_id" string="Name"/>
                           <field name="recolor" invisible="1"/>
+                          <button name="show_documentation" string="Show Complete Procedure Documentation" type="object" icon="fa-book"/>
                           <field name="status"/>
                           <field name="write_date" readonly="True"/>
                         </tree>

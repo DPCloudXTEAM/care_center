@@ -15,6 +15,10 @@ class ProcedureProcedure(models.Model):
     child_ids = fields.One2many('procedure.procedure', 'parent_id', string='Checklist')
     sequence = fields.Integer('Sequence', default=1)
     tag_ids = fields.Many2many('project.tags', string='Tags')
+    documentation = fields.Html('Documentation', compute='_compile_documentation',
+                                help='Documentation for this Checklist, or the combined '
+                                     'documentation for all the Checklists of this Procedure.',
+                                )
 
     @api.model
     def create(self, vals):
@@ -31,6 +35,44 @@ class ProcedureProcedure(models.Model):
             raise ValidationError(
                 '%s is a checklist item and cannot be a parent procedure' % self.parent_id.name
             )
+
+    @api.multi
+    def _compile_documentation(self):
+        """Combine all checklists descriptions for a given Procedure"""
+        for procedure in self:
+            if procedure.parent_id:
+                continue
+
+            docs = ['<h3>Procedure: %s</h3> %s' % (procedure.name, procedure.description)]
+            checklists = self.env['procedure.procedure'].search([
+                ('parent_id', '=', procedure.id)
+            ])
+            for checklist in checklists:
+                docs.append('<h3>%s</h3> %s' % (checklist.name, checklist.description))
+
+            procedure.documentation = ''.join(docs)
+
+    @api.multi
+    def show_documentation(self):
+        """
+        Display modal form containing all documentation content
+        from this procedure and all child procedures
+        """
+        form = self.env.ref('care_center_procedure.view_procedure_documentation_form')
+
+        return {
+            'name': '%s Documentation' % self.name,
+            'view_type': 'form',
+            'view_mode': 'form',
+            'res_model': 'procedure.procedure',
+            'view_id': False,
+            'type': 'ir.actions.act_window',
+            'target': 'current',
+            'res_id': self.id,
+            'views': [
+                (form.id, 'form'),
+            ],
+        }
 
     @api.multi
     def add_checklist(self):
@@ -70,6 +112,7 @@ class ProcedureAssignment(models.Model):
     sequence = fields.Integer()
     issue_id = fields.Many2one('project.issue', 'Issue', ondelete='cascade', required=False, index="1")
     description = fields.Html('Description', related='procedure_id.description')
+    documentation = fields.Html('Documentation', related='procedure_id.documentation')
     recolor = fields.Boolean(compute='_compute_recolor')
 
     _sql_constraints = [
@@ -81,6 +124,28 @@ class ProcedureAssignment(models.Model):
         for record in self:
             if record.status == 'todo':
                 record.recolor = True
+
+    @api.multi
+    def show_documentation(self):
+        """
+        Display modal form containing all documentation content
+        from this procedure and all child procedures
+        """
+        form = self.env.ref('care_center_procedure.view_procedure_documentation_form')
+
+        return {
+            'name': '%s Documentation' % self.procedure_id.name,
+            'view_type': 'form',
+            'view_mode': 'form',
+            'res_model': 'procedure.assignment',
+            'view_id': False,
+            'type': 'ir.actions.act_window',
+            'target': 'current',
+            'res_id': self.id,
+            'views': [
+                (form.id, 'form'),
+            ],
+        }
 
     @api.multi
     def set_parent_procedure_status(self):
