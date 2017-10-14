@@ -16,8 +16,13 @@
                         help="Assign a Procedure to this Issue"/>
             </header>
 
+            <field name="user_id" position="before">
+                <field name="procedure_count" invisible="1"/>
+                <field name="checklist_count" invisible="1"/>
+            </field>
+
             <notebook position="inside">
-                <page string="Procedures">
+                <page string="Procedures" attrs="{'invisible': [('procedure_count', '=', 0)]}">
                     <field name="procedure_ids">
                       <tree string="Procedures" editable="bottom" create="false" colors="red:recolor == True;gray:status == 'cancelled';blue:status == 'working';green:status == 'done';#b818ce:status == 'waiting'">
                           <field name="sequence"/>
@@ -29,7 +34,7 @@
                         </tree>
                     </field>
                 </page>
-                <page string="Checklist">
+                <page string="Checklist" attrs="{'invisible': [('checklist_count', '=', 0)]}">
                     <field name="checklist_ids">
                       <tree string="Checklist" editable="bottom" colors="red:recolor == True;gray:status == 'cancelled';green:status == 'done';#b818ce:status == 'waiting'">
                           <field name="sequence"/>

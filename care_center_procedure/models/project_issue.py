@@ -15,6 +15,16 @@ class ProjectIssue(models.Model):
                                     string='Checklist',
                                     domain=[('procedure_id.parent_id', '!=', False)],
                                     )
+    procedure_count = fields.Integer(compute='_procedure_count')
+    checklist_count = fields.Integer(compute='_checklist_count')
+
+    @api.multi
+    def _procedure_count(self):
+        self.procedure_count = len(self.procedure_ids)
+
+    @api.multi
+    def _checklist_count(self):
+        self.checklist_count = len(self.checklist_ids)
 
     @api.multi
     def assign_procedure(self, procedure, sequence):
