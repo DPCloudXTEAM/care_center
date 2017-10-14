@@ -98,6 +98,7 @@ class ProcedureProcedure(models.Model):
 class ProcedureAssignment(models.Model):
     _name = "procedure.assignment"
     _rec_name = 'procedure_id'
+    _order = 'procedure_id asc, sequence asc'
 
     status = fields.Selection([
         ('done', 'Done'),

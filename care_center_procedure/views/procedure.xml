@@ -29,6 +29,7 @@
         <field name="model">procedure.procedure</field>
         <field name="arch" type="xml">
             <tree>
+                <field name="sequence"/>
                 <field name="name"/>
                 <field name="parent_id"/>
             </tree>
