@@ -46,7 +46,7 @@
             <form string="Procedure">
                 <header>
                     <button name="add_checklist" string="Add Checklist" type="object" invisible="context.get('hide_checklist',False)" attrs="{'invisible': [('parent_id', '!=', False)]}"/>
-                    <button name="show_documentation" string="Show Documentation" type="object"/>
+                    <button name="show_documentation" string="Show Documentation" type="object" attrs="{'invisible': [('parent_id', '!=', False)]}"/>
                 </header>
                 <sheet>
                     <div class="oe_button_box" name="button_box">
